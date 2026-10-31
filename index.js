@@ -25,28 +25,73 @@ const db= mongoClient.db('wanderlust_resources')
 const destinationCollection = db.collection('destination')
 const bookingsCollection = db.collection('booking')
 
-const verifyToken = async(req,res,next)=>{
+
+// const verifyToken = async(req,res,next)=>{
+//   const authHeader = req.headers.authorization;
+//   if(!authHeader){
+//     return res.status(401).send({msg:'Unauthorized!'});
+//   }console.log(
+//   "Authorization header exists:",
+//   !!req.headers.authorization
+// );
+
+// console.log(
+//   "Bearer token exists:",
+//   !!req.headers.authorization?.split(" ")[1]
+// );
+//   const token = authHeader.split(" ")[1]
+//   console.log(token)
+//   if(!token){
+//         return res.status(401).send({msg:'Unauthorized!'});
+//   }
+//   const JWKS = createRemoteJWKSet(
+//     new URL(`${process.env.CLIENT_URL}/api/auth/jwks`)
+//   );
+//   try{
+//     const {payload} = await jwtVerify(token,JWKS);
+//     console.log(payload)
+//     next()
+//   }catch(error){
+//     return res.status(500).send({msg:'Server Error!'})
+//   }
+
+// }
+
+
+const verifyToken = async (req, res, next) => {
   const authHeader = req.headers.authorization;
-  if(!authHeader){
-    return res.status(401).send({msg:'Unauthorized!'});
+
+  console.log("Authorization header exists:", !!authHeader);
+
+  if (!authHeader?.startsWith("Bearer ")) {
+    return res.status(401).send({ msg: "Missing Bearer token!" });
   }
-  const token = authHeader.split(" ")[1]
-  console.log(token)
-  if(!token){
-        return res.status(401).send({msg:'Unauthorized!'});
+
+  const token = authHeader.split(" ")[1];
+
+  console.log("Bearer token exists:", !!token);
+
+  if (!token) {
+    return res.status(401).send({ msg: "Token is missing!" });
   }
+
   const JWKS = createRemoteJWKSet(
     new URL(`${process.env.CLIENT_URL}/api/auth/jwks`)
   );
-  try{
-    const {payload} = await jwtVerify(token,JWKS);
-    console.log(payload)
-    next()
-  }catch(error){
-    return res.status(500).send({msg:'Server Error!'})
-  }
 
-}
+  try {
+    const { payload } = await jwtVerify(token, JWKS);
+
+    console.log("JWT verified successfully:", true);
+
+    req.user = payload;
+    next();
+  } catch (error) {
+    console.error("JWT verification failed:", error.message);
+
+    return res.status(401).send({ msg: "Invalid or expired token!" });
+  }
+};
 
 
 app.get('/',(req,res)=>{
